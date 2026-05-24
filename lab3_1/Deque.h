@@ -1,0 +1,316 @@
+#pragma once
+
+#include "Sequence.h"
+#include "ListSequence.h"
+
+#include <stdexcept>
+
+template <class T>
+class Deque {
+private:
+
+    ListSequence<T>* data;
+
+public:
+
+    Deque() {
+        data = new ListSequence<T>();
+    }
+
+    Deque(const Deque<T>& other) {
+
+        data = new ListSequence<T>();
+
+        for (auto it = other.data->Begin();
+             it != other.data->End();
+             ++it) {
+
+            data->Append(*it);
+        }
+    }
+
+    ~Deque() {
+        delete data;
+    }
+
+    int GetSize() const {
+        return data->GetSize();
+    }
+
+    bool IsEmpty() const {
+        return GetSize() == 0;
+    }
+
+    void PushFront(const T& item) {
+        data->Prepend(item);
+    }
+
+    void PushBack(const T& item) {
+        data->Append(item);
+    }
+
+    T Front() const {
+
+        if (IsEmpty()) {
+            throw std::out_of_range(
+                "Deque is empty"
+            );
+        }
+
+        return data->Get(0);
+    }
+
+    T Back() const {
+
+        if (IsEmpty()) {
+            throw std::out_of_range(
+                "Deque is empty"
+            );
+        }
+
+        return data->Get(
+            GetSize() - 1
+        );
+    }
+
+    T PopFront() {
+
+        if (IsEmpty()) {
+            throw std::out_of_range(
+                "Deque is empty"
+            );
+        }
+
+        T value = Front();
+
+        data->RemoveAt(0);
+
+        return value;
+    }
+
+    T PopBack() {
+
+        if (IsEmpty()) {
+            throw std::out_of_range(
+                "Deque is empty"
+            );
+        }
+
+        T value = Back();
+
+        data->RemoveAt(
+            GetSize() - 1
+        );
+
+        return value;
+    }
+
+    Deque<T> Concat(
+        const Deque<T>& other
+    ) const {
+
+        Deque<T> result;
+
+        for (auto it = data->Begin();
+             it != data->End();
+             ++it) {
+
+            result.data->Append(*it);
+        }
+
+        for (auto it = other.data->Begin();
+             it != other.data->End();
+             ++it) {
+
+            result.data->Append(*it);
+        }
+
+        return result;
+    }
+
+    Deque<T> operator+(
+        const Deque<T>& other
+    ) const {
+
+        return Concat(other);
+    }
+
+    Deque<T> Map(
+        T (*func)(const T&)
+    ) const {
+
+        Deque<T> result;
+
+        for (auto it = data->Begin();
+             it != data->End();
+             ++it) {
+
+            result.data->Append(
+                func(*it)
+            );
+        }
+
+        return result;
+    }
+
+    Deque<T> Where(
+        bool (*predicate)(const T&)
+    ) const {
+
+        Deque<T> result;
+
+        for (auto it = data->Begin();
+             it != data->End();
+             ++it) {
+
+            if (predicate(*it)) {
+
+                result.data->Append(*it);
+            }
+        }
+
+        return result;
+    }
+
+    T Reduce(
+        T (*func)(
+            const T&,
+            const T&
+        ),
+        const T& startValue
+    ) const {
+
+        T result = startValue;
+
+        for (auto it = data->Begin();
+             it != data->End();
+             ++it) {
+
+            result = func(
+                result,
+                *it
+            );
+        }
+
+        return result;
+    }
+
+    Deque<T> GetSubsequence(
+        int startIndex,
+        int endIndex
+    ) const {
+
+        if (startIndex < 0 ||
+            endIndex >= GetSize() ||
+            startIndex > endIndex) {
+
+            throw std::out_of_range(
+                "Wrong indexes"
+            );
+        }
+
+        Deque<T> result;
+
+        int index = 0;
+
+        for (auto it = data->Begin();
+             it != data->End();
+             ++it) {
+
+            if (index >= startIndex &&
+                index <= endIndex) {
+
+                result.data->Append(*it);
+            }
+
+            index++;
+        }
+
+        return result;
+    }
+
+    bool FindSubsequence(
+        const Deque<T>& subsequence
+    ) const {
+
+        for (auto it = data->Begin();
+             it != data->End();
+             ++it) {
+
+            auto mainIt = it;
+
+            auto subIt =
+                subsequence.data->Begin();
+
+            bool found = true;
+
+            while (subIt !=
+                   subsequence.data->End()) {
+
+                if (mainIt ==
+                    data->End()) {
+
+                    found = false;
+                    break;
+                }
+
+                if (*mainIt != *subIt) {
+
+                    found = false;
+                    break;
+                }
+
+                ++mainIt;
+                ++subIt;
+            }
+
+            if (found) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    void Sort() {
+
+        for (int i = 0;
+             i < GetSize() - 1;
+             i++) {
+
+            for (int j = 0;
+                 j < GetSize() - i - 1;
+                 j++) {
+
+                if (data->Get(j) >
+                    data->Get(j + 1)) {
+
+                    T temp =
+                        data->Get(j);
+
+                    data->Set(
+                        j,
+                        data->Get(j + 1)
+                    );
+
+                    data->Set(
+                        j + 1,
+                        temp
+                    );
+                }
+            }
+        }
+    }
+
+    Deque<T> Merge(
+        const Deque<T>& other
+    ) const {
+
+        Deque<T> result =
+            Concat(other);
+
+        result.Sort();
+
+        return result;
+    }
+};
